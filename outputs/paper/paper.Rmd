@@ -1,0 +1,534 @@
+---
+title: "Who will win Popular Vote in 2020 US Election?"
+subtitle: "Joe Biden predicted to win with 52.5% vote +/- 5.2% confidence by a multilevel logistic regression with post-stratification"
+author: 
+  - Yinuo Zhang
+thanks: "Code and data are available at: https://github.com/Amy527/paper4."
+date: "10 April 2022"
+abstract: "US election is always a big deal attract people's attention all around the world, for the upcoming US 2020 election, it hits the world again. This study aims to build a multilevel logistic regression with post-stratification to forecast the outcome for 2020 US Election. The study was conducted based on Democracy Fund + UCLA ationscape survey data and American Community Surveys (ACS) Post-stratification data. The findings show Joe Biden will win the Popular Vote in 2020 US Election over Donald Trump (52.5% vs. 47.5%, +/- 5.2% confidence)."
+output:
+  bookdown::pdf_document2
+linestretch: 1.5
+toc: FALSE
+bibliography: references.bib
+---
+
+**Keywords**: US 2020 Election; Joe Biden; Donald Trump; post-stratification;
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE)
+#load packages
+library(tidyverse)
+library(broom)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(scales)
+library(maps)  
+library(cowplot)
+# read data
+survey <- readRDS("data/survey.rds")
+post <- readRDS("data/post_cleaned.rds")
+```
+
+# Introduction
+
+The question like "Who will win Popular Vote in US Election?" would become hot when the Popular Vote in US Election coming once again. The 2020 United States presidential election was on November 3rd, 2020 and it indeed became a hot topic in that period. In the end of year 2019, due to COVID-19, the 2020 United States presidential election became more interesting as it would determine the two different ways of US in treating COVID-19 too. Donald Trump who won the 2016 election represented the Republican party and the vice-president of Barack Obama represented the Democratic party. People around the world were attracted by the US election, most of them wanted to predict the outcome before the outcome of election. 
+
+This study would also review the issue of US 2020 election and aims to build a multilevel logistic regression with post-stratification to forecast the outcome for 2020 US Election to investigate whether the predicted outcome matched the true outcome which Joe Biden won. The multilevel logistic regression with post-stratification is a widely used method that first it builds a model on a small survey data and then applied to a larger census data to obtain a nationwide outcome. The study was conducted based on Democracy Fund + UCLA ationscape survey data which was token by 
+lots of scholars and analysts to investiget the behaviours of voters in American (@citesurvey) and American Community Surveys (ACS) Post-stratification data which was published by Integrated Public Use Microdata Series (IPUMS) (@citeIPUMS). The key variables used are age, sex, race, education, income, hispanic or not. The study built model on Democracy Fund + UCLA ationscape survey data and applied the model on American Community Surveys (ACS) Post-stratification data, the study obtained the overall vote percentage would be won by Joe Biden with confidence interval as well as vote percentage won across all of the US states individually. 
+
+The study is important because once we have a good experience in using  multilevel logistic regression with post-stratification and got an accurate forecasts of Popular Vote in 2020 US Election, we could apply the similar method in the next 2024 US Election, and we might be able to predict the outcome as there are lots of beneficials in predicting the outcome of US Election. 
+
+The study was organized as following: In data section, we introduce the Democracy Fund + UCLA ationscape survey data and American Community Surveys (ACS) Post-stratification data. In model section, we introduce the multilevel logistic regression with post-stratification and interpret model results. In results section, we show the forecasting results of votes with tables, graphs and maps. Finally, in the discussion section, we discuss the results and findings as well as weaknesses and next steps of the study. The study is carried out using R (@citeR),  Rmarkdown (@citermarkdown), tidyverse (@citetidyverse), ggplot2(@citeggplot2), dplyr (@citedplyr), scales (@citescales), broom (@citebroom), cowplot (@citecowplot), knitr (@citeknitr), maps(@citemaps). 
+
+
+
+# Data
+
+This study used the U.S.presidential election 2020 survey data  from Nationscape on June 25, 2020 to train the  multilevel logistic regression  and then used the model fitted on the American Community Surveys (ACS) Post-stratification data. 
+
+According to @scheibe2011age, there was found that age differences played an important role in the 2008 US presidential election, commonly, age was decied into 
+the 4 groups: 18-35, 36-49, 50-65 and 65+. @valentino2018mobilizing claimed there was difference in gender attitudes in the 2016 US presidential election, it was claimed that males were consistently to be more conservative positions than females. @deckman2021gendered discussed the education level role in 2016 US presidential election, the study pointed out education level was an important part in voting behavior.  @greenwald2009implicit discussed the effects of race in affecting the 2008 US presidential election, race was an important factor. Also, it was believed
+the vote willness was different between diferent income levels, the voting behavior between rich and poor voters was different. Based on the above researches, this study used age, sex, race, education, income, hispanic or not as explanatory variables and the dummy binary variable created from the variable 'vote_2020' in the survey data that it was coded 1 for Joe biden win and 0 for Donald trump win, other vote outcomes were ignored in this study.
+
+## Survey Data
+
+The survey data comes from Democracy Fund + UCLA Nationscape (@citesurvey). The sampling method of the survey is the stratified sampling as the Democracy Fund groups potential voters by several key demographics such as age, gender, race and education level. The population of the survey is people live in the United States, the sampling frame of the survey is dividing all people live in the United States into groups by key demographics such as age, gender, race and education level. The sample of the survey is people who conducted the survey. The survey was conducted online, the survey from June 25, 2020 was used in this study which includes 6046 observations and 266 variables.
+
+The survey data was designed to cover as many ass possible factors could show the voteing behavior of voters, it includes  age, gender, race, income, education, job, region, religion and so on. Due to different groups of people would support different political parties due to issues of gun policy, health care, income tax and so on, for year 2020, covid-19 insurance would be another important issue. 
+
+The survey was reliable to be representative of the American population, as it was designed weekly by Nationscape on the Lucid market research platform which targeted on specified group of people based on key demographics such as age, gender, race and education level. People with speeding answers (i.e. completed survey too quick) or people use similar answers for all questions in the questionnaires were dropped to make the results of survey as accurate as possible. So the Nationscape survey is useful due to the procedures to make sure the data obtained are accurate and could be representative of the American population.
+
+The survey also encounter some weaknesses, first, it was conducted online from randomly selected counties and cities, there might be selection bias. Second, there might be non-response bias, people might missed or did not response to the survey.
+
+## Post-Stratification Data
+
+The Post-Stratification Data comes from IPUMS America Census Service (ACS) (@citeIPUMS), U.S. Census Bureau designed the projects of ACS and the IPUMS hold data of ACS. 
+
+The sampling method of the ACS is the stratified sampling based on subgroups from several key demographics such as age, gender, race, education level and so on. The population of the ACS is United States population, the sampling frame of the ACS is people completed the census that about 1 out of 100 persons. The sample of the ACS is household not the individual as information like household income and topics are more easily conducted in households than individuals, the samples would be selected from subgroups.
+
+ACS has lots of strengths, first, it is a national-wide census, the population is the whole United States population. Second, it is more reliable as it is a nationwide census, the trends in different groups are accurate as information are from millions  people. The weakness of the IPUMS data mainly are that the data is expensive as the census is nationwide, the cost is huge, also, there were some confusion records in the census data such as extremely high income, age and etc. Also, some data might be fixed using imputation methods which are something like "black box", people can not know what exactly be repaired and adjusted. IPUMS data also focus on the accuracy, they try to make sure the survey would be completed with less biasness. 
+
+
+The Post-Stratification Data has millions records, to keep consistent with the survey data, similar key attributes like age , gender, race, income level and education level were selected. Also, due to different sources of data, data cleanning procedures were conducted mainly to make the data variables have consistent names, levels of categories. For age groups, we have 4 groups: 18-35, 36-49, 50-65 and 65+.  For race, we have 3 groups: white, black and other. For income level, we have median level or below and above median level where median level is defined as 36000 dollars computed from the ACS data. For education level, we have 3 groups: High school or below, BA or below, Abova BA. Also, we have groups whether haspanic or not.
+
+Figure \@ref(fig:g1) shows the data consistency between the survey data and the Post-Stratification data for the  key attributes  age , gender, race, hispanic or not, income level and education level. Figure \@ref(fig:g1) shows the data consistency between the survey data and the Post-Stratification data across states.
+
+
+```{r}
+
+# basic variables proportions among two types of data
+
+a1 <- survey %>% group_by(sex) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "poll",
+        variable= "gender") 
+a2 <- survey %>% group_by(race) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "poll",
+         variable = "race") 
+
+a3 <- survey %>% group_by(agegroup) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "poll",
+         variable  = "age") 
+
+a4 <- survey %>% group_by(education) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "poll",
+         variable= "education") 
+a5 <- survey %>% group_by(hispanic) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "poll",
+         variable= "hispanic")
+
+a6 <- survey %>% group_by(incomegroup) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "poll",
+         variable= "income")
+
+
+b1 <- post %>% group_by(sex) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "post-stratification",
+         variable  = "gender")
+
+
+
+b2 <- post %>% group_by(race) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "post-stratification",
+         variable  = "race") 
+
+b3 <- post %>% group_by(agegroup) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "post-stratification",
+         variable = "age")
+
+
+b4 <- post %>% group_by(education) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "post-stratification",
+         variable  = "education")
+
+b5 <- survey %>% group_by(hispanic) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "post-stratification",
+         variable= "hispanic")
+
+b6 <- survey %>% group_by(incomegroup) %>% summarise(n = n()) %>%
+  mutate(perc = n/sum(n),
+         type = "post-stratification",
+         variable= "income")
+
+
+colnames(a1)[1] <- colnames(a2)[1] <- colnames(a3)[1] <- colnames(a4)[1] <- 
+   colnames(a5)[1]  <- colnames(a6)[1]  <- 
+
+colnames(b1)[1] <- colnames(b2)[1] <- colnames(b3)[1] <- colnames(b4)[1] <- colnames(b5)[1] <- colnames(b6)[1] <- "value"
+
+#merge all together
+df1 <- rbind(a1, 
+             a2, 
+             a3, 
+             a4,
+             a5,
+             a6,
+             b1,
+             b2,
+             b3,
+             b4,
+             b5,
+             b6)
+
+#show distributions of voters
+g1 <- ggplot(df1, aes(value, perc, fill = type)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~variable, scales = "free", nrow = 3) +
+    scale_y_continuous(labels = scales::percent)  + theme_bw() +
+  labs(y = "Percentage (%)", x =  "",
+       fill = "",
+       title = "Voter's distribution by demographics"
+       ) 
+
+a7 <- survey %>% 
+  group_by(stateicp) %>% 
+  summarise(n = n()) %>% 
+  mutate(perc = n/sum(n), type = "poll",
+         variable = "state")
+
+b7<- post %>% 
+  group_by(stateicp) %>% 
+  summarise(n = n()) %>% 
+  mutate(perc = n/sum(n), type = "post-stratification",
+       variable = "state")
+
+colnames(a7)[1] <- colnames(b7)[1] <-  "value"
+
+df2 <- rbind(a7, 
+             b7)
+#by state             
+g2 <- ggplot(df2, aes(value, perc, fill = type)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~variable, scales = "free") +
+    scale_y_continuous(labels = scales::percent) +
+  theme_bw() +
+  labs(y = "Percentage (%)", x =  "",
+       fill = "",
+       title = "Voter's distribution by geography"
+       ) +
+  theme(axis.text.x =  element_text(angle = 90))
+  
+#check supports across variables
+d <- survey %>% group_by(race) %>% summarise(biden = mean(biden))%>% mutate(variable = "race") 
+d2 <- survey %>% group_by(agegroup) %>% summarise(biden = mean(biden))%>% mutate(variable = "age") 
+d3 <- survey %>% group_by(incomegroup) %>% summarise(biden = mean(biden))%>% mutate(variable = "income") 
+colnames(d)[1] <- colnames(d2)[1]  <- colnames(d3)[1]  <- "value"
+dt <- rbind(d, d2, d3)
+
+g3 <- ggplot(dt, aes(value, biden)) + 
+  geom_bar(stat = "identity", fill = "orange") +
+  facet_wrap(~variable, scales = "free") +
+    scale_y_continuous(labels = scales::percent)  + theme_bw() +
+  labs(y = "Biden support percentage (%)", x =  "",
+       fill = "",
+       title = "Biden supports by demographics"
+       ) 
+
+```
+
+
+
+
+```{r g1, fig.cap="Voter's distribution by demographics", fig.height = 5.0, fig.width = 8.6}
+g1
+```
+
+Table 1 shows the overall vote percentage for Biden is about 54% which is much higher than that of Trump. Figure \@ref(fig:g1) shows that for most of parts, the polling survey data matches the Post-Stratification data well. The major difference is there is more proportion of voters aged over 65 and less roportion of voters aged 18-49  in the Post-Stratification data compared with thoses in the survey data. Also survey data appears to collect more data from BA education level while Post-Stratification data contains more data from High school or below level. The other variables gender, hispanic, race and income level are very similar between the survey data and Post-Stratification data. 
+
+
+
+```{r g2, fig.cap="Voter's distribution by geography", fig.height = 5.2, fig.width = 10.8}
+g2
+```
+
+Figure \@ref(fig:g2) shows that the population distributions by states that  the polling survey data matches the Post-Stratification data well overall, but for states like arizona, florida, the gaps are not small. 
+
+```{r g3, fig.cap="Joe Biden supports by demographics", fig.height = 3.6, fig.width = 7.8}
+g3
+```
+
+
+
+
+```{r}
+#vote percentage
+d <-survey %>%
+  mutate(biden = ifelse(biden == 1,
+                        "Joe Biden", "Donald Trump")) %>% 
+  group_by(biden) %>% 
+  summarise(n = n()) %>%
+  mutate(Percentage = n/sum(n)*100)
+
+colnames(d) <- c("Candidate","Votes","Percentage")
+knitr::kable(d,
+             digits = 3, caption = "Votes percentages in Polling data")
+
+#supports by states for biden
+d <- survey %>%
+  group_by(stateicp) %>% 
+  summarise(Percentage  = mean(biden)*100) %>%
+  arrange(desc(-Percentage))
+d$color = factor(ifelse(d$Percentage > 50, "win","lose"))
+d$stateicp <- factor(d$stateicp, level = d$stateicp)
+g4 <- ggplot(d, aes(stateicp, Percentage/100, fill = color)) +
+  geom_bar(stat = "identity")  + 
+  coord_flip() +
+  scale_fill_manual(values = c("red","blue")) +
+  labs(fill = "Vote outcome", x = "", title = "Votes percentages for Joe Biden across states") +
+  theme_classic() + 
+  scale_y_continuous(labels = scales::percent) 
+  
+
+```
+
+```{r g4, fig.cap="Joe Biden supports across states", fig.height = 8.8, fig.width = 7.8}
+g4
+```
+
+Figure \@ref(fig:g3) shows the Joe Biden supports by demographics, clearly, it can be seen that younger ones 18-35, median income or beloe and blacks tend to be more willing in voting Biden.  Figure \@ref(fig:g4) shows the Votes percentages for Joe Biden across states, clearly, it shows the support rates declined by states, the states like district of columbia, vermont, connecticut, massachusetts, new mexico, hawaii, california support Joe biden clearly but states like alaska, south carolina,pennsylvania, indiana, texas support Trump clearly. 
+
+Overall, we can say the survey data and the post-stratification data are consistent, there is no big gap between them. And the differences of supports among variables indicating the variables could be used to make predictions of votes as they have predictive powers. Thus, we can build model on survey data and apply it on post-stratification data.
+
+# Model
+
+This study plans to use the multilevel logistic regression with post-stratification which is a method that first fit on a smaller data and then applied to a larger data. This method is very useful not only becasue it is simple but also due to it could be applied to large data from survey data, large data set costs much higher than a survey, but with a careful designed survey and obtain similar variables as large data set, one can use multilevel regression with post-stratification method to estimate results in the large data set efficiently. However, this method has some weaknesses too, this method requires data consistent between the survey data and 
+post-stratification, and even the data sets are consistent, the outcomes on post-stratification data using model built on survey data might be biased. 
+
+In this study, the multilevel logistic regression with post-stratification  was first build on the the Democracy Fund + UCLA ationscape survey data (@citesurvey) and then applied to the American Community Surveys (ACS) Post-stratification data (@citeIPUMS). The equation \@ref(eq:1) shows the form of the logistic model used. The logistic model is appropriate due to we are only interested in whether a voter will vote for Joe Biden or Donald Trump which is a binary outcome, the outcome 1 stands for Joe Biden  and 0 for Donald Trump in this study. The logistic model assume the voters are independent and the data is large. For the assumption of independent, the Nationscape group already use unique IDs and for large data, the survey cleaned data is over 4000 which is large enough.
+ 
+
+\begin{equation} 
+logit(p) = \beta_0+ \beta_1  sex +  \beta_2 race  + \beta_3 hispanic + \beta_4 age + \beta_5 income + \beta_6 education +  \epsilon (\#eq:1)
+\end{equation} 
+
+where p is the probability of voting for Joe Biden,  $\beta_0$ is intercept, other coefficients are for related variables, note that, here these coefficients could be multiple ones as the variable like age used in this study is age group with 4 groups that it has 3 dummies. The error term is $\epsilon$. 
+
+
+The model  would be built on the  Democracy Fund + UCLA ationscape survey data (@citesurvey) using `glm` function in R (@citeR) and then applied to the American Community Surveys (ACS) Post-stratification data (@citeIPUMS). For Post-stratification data, we first group the data by the key variables which formed cells or bins, and we predict the probabilities of voting Joe biden for voters in that cells or bins, also, we can predict the results with 95% confidence interval. This could be done use `predict` function in R (@citeR).
+
+The predict formula of the logistic model is shown in equation \@ref(eq:2):
+
+\begin{equation} 
+ \hat{p} = \frac{e^{\hat{y}}}{1 + e^{\hat{y}}}
+  (\#eq:2)
+\end{equation} 
+
+where $\hat{y}$ comes from the \@ref(eq:3) as following:
+
+\begin{equation} 
+\hat{y} = \hat{\beta}_0+ \hat{\beta}_1  sex +  \hat{\beta}_2 race  + \hat{\beta}_3 hispanic + \hat{\beta}_4 age + \hat{\beta}_5 income + \hat{\beta}_6 education
+  (\#eq:3)
+\end{equation} 
+
+Where it is the linear combinations of estimated coefficients and variables. 
+
+With the probabilities of voting Joe biden obtained for voters in bins, we can use equation \@ref(eq:4) to compute overall predicted probability of voting for Joe biden, this would be done overall in US all states as well as across states respectively.
+
+\begin{equation} 
+ \hat{p}^{PS}=\dfrac{1}{N}\sum\limits_{i=1}^L N_i \hat{p}_i
+  (\#eq:4)
+\end{equation} 
+
+Where $\hat{p}_i$ is predicted probability in the i-th cell or bin, $N_i$ is voters number in the i-th cell or bin, N is overall number. In this study, bins are formed by subgroups from key variables age, sex, education and so on. The results are calculated for both US as whole and each state in US.
+
+At last, the multilevel logistic regression with post-stratification  model has some weakness here, first, we do not consider individual level in the post-stratification data but subgroups, second, we do not consider other candidates due to the logistic model here is only for binary outcome. Also, the model depend on survey data seriously, a diferent survey might lead to different predictions on the post-stratification data. 
+
+
+# Results
+
+
+```{r}
+model <- glm(biden ~ sex + race +  hispanic + 
+               agegroup + incomegroup + education + 
+               stateicp, 
+             data = survey, family = binomial(link = "logit"))
+##coefficients from logistic model with 95% CI
+coefs <- broom::tidy(model, conf.int = T)
+```
+
+
+
+```{r}
+knitr::kable(coefs[,-5],
+             caption = "Logistic model estimated coeficients",
+             digits = 3) 
+```
+
+Table 2 shows the Logistic model estimated coeficients, the results then would be applied to the  American Community Surveys (ACS) Post-stratification data (@citeIPUMS). The coefficients are log-odds that positive ones means voters will likely vote for Joe Biden while the negative ones means voters will likely vote for Trump. The 95% confidence interval of the estimates are also shown in the table 2, when 95% confidence intervals contain 0s, then the variable's effect is not significant, so from the estimates and 95% confidence intervals, we can find the signs, the magnitude as well as significance of variables on the voting outcome clearly.
+
+For the prediction example, use some voter comes from the connecticut state, aged 18-35 who are males and have income level above the median with white race not hispanic, the education level is above BA, the prediction from the model in the study would be 75.4% with a 95% confidence interval (68.9%, 82.0%). For another prediction example, use some voter comes from the pennsylvania state, aged 50-65 who are males and have income level above the median with white race not hispanic, the education level is High school or below, the prediction from the model in the study would be 24.0% with a 95% confidence interval (20.7%, 27.3%). 
+
+Figure  \@ref(fig:g5) shows the estimated coeficients with 95% confidence intervals more directly sorted in desc order of estiamted coefficients, the error bars stand for confidence intervals while the points are the estimated coefficients. So it is more easily to find out which variables are positive and negative ones and whether the 95% confidence intervals include 0s for these variables.
+
+
+```{r}
+coefs2 <- coefs %>%arrange(desc(-estimate))
+coefs2$term <- factor(coefs2$term , levels = coefs2$term )
+coefs2$color = factor(ifelse(coefs2$estimate > 0, "positive","negative"))
+g5<-ggplot(coefs2, aes(estimate, term)) +
+  geom_point(aes(color = color)) +
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high, color = color)) +
+  labs(title = "Logistic model estimated coeficients",
+       x = "Coefficient",
+       y = "") + 
+  theme_light() +
+    scale_color_manual(values = c("red", "blue"))
+```
+
+```{r g5, fig.cap="Logistic model estimated coeficients", fig.height = 7.4, fig.width = 7.8}
+g5
+```
+
+
+Figure \@ref(fig:d) shows the model diagnotics in details in the appendix. It shows the pearson residuals vs. fitted values from the model and the cook's distance plot. Pearson residuals vs. fitted values plot show there is no big  issuse that the results formed two clusters clearly which are for those voting for Biden and Trump respectively. And as the higher cook's distance the large impact on the model,  the cook's plot shows there are very few points with large cook's distance which could affect the results of model seriously, almost all of points have low cook's distance. so overall, the model diagnostics show the model is relatively strong.
+
+
+
+```{r}
+#post data by weights of factors and for each state
+post_data <- post %>% 
+  group_by(stateicp, agegroup, incomegroup, 
+           sex, education, hispanic, race) %>% 
+  summarise(n = n()) %>% 
+  group_by(stateicp) %>% 
+  mutate(w = n/sum(n))
+
+#prediction
+#post_data[6,]
+#post_data[post_data$predicts < 0.3, ][4,]
+#predicts for states with upper and lower intervals
+post_data$predicts <- predict(model, newdata = post_data,
+                          type = "response")
+
+
+post_data$ses <- predict(model, newdata = post_data,
+                          type = "response", se.fit = TRUE)$se
+
+post_data$low <- post_data$predicts - post_data$ses 
+post_data$upper <- post_data$predicts + post_data$ses 
+
+#states weights
+df <- post_data %>% summarise(mean = sum(w * predicts),
+                              low = sum(w * low),
+                               upper = sum(w * upper)
+                              ) 
+
+#overall predicts in all states
+post_data2 <- post %>% 
+  group_by(stateicp, agegroup, incomegroup, 
+           sex, education, hispanic, race)%>% 
+  summarise(n = n())
+post_data2$w <-   post_data2$n / sum(post_data2$n )
+post_data2$predicts <- predict(model, newdata = post_data2,
+                          type = "response")
+post_data2$ses <- predict(model, newdata = post_data2,
+                          type = "response", se.fit = TRUE)$se
+
+post_data2$low <- post_data2$predicts - post_data2$ses 
+post_data2$upper <- post_data2$predicts + post_data2$ses 
+
+
+colnames(df)[1] <- "region"
+
+df2 <- data.frame(region = "US",  mean = sum(post_data2$w * post_data2$predicts),
+                              low = sum(post_data2$w *post_data2$ low),
+                               upper = sum(post_data2$w *post_data2$ upper))
+
+df3 <- rbind(df2, df)
+
+knitr::kable(df3, caption = "Final predictions in US for supports of Joe Biden")
+```
+
+Table 3 shows the voting percetanges for Joe Biden across states with 95%  confidence intervals as well as the overall outcome in US. It could be seen clearly that lots of states with 95%  confidence intervals including 50% which means these states are most hardest ones to predict and also, these states are most important one that both Biden and Trump want to win. For states like connecticut, the low voting percentage is already much above 50% which is about 67% for Biden, these states are supposed to vote Biden for sure, but for other states like west virginia,  the upper voting percentage is already much below 50% which is about 45% for Biden, these states are supposed not to vote Biden for sure, these results are consistent with facts that some states are consistently vote the parties in history of US election. 
+
+
+Figure \@ref(fig:map) shows the  prediction outcome of vote percentage win by Joe Biden across states in 3 situations: average, worst and best. For average situation, we use mean predicted probability for Biden across states, for worst situation, we use lower bound predicted probability for Biden across states and for best situation, we use upper bound predicted probability for Biden across states. Clearly, we can find that even in worst situations, there are states will vote for Biden and even in best situations, there are states will not vote for Biden. 
+
+Overall, table 3 shows that Joe Biden predicted to win with 52.5% vote +/- 5.2% confidence by the multilevel logistic regression with post-stratification in US.
+
+
+```{r map, fig.cap="Prediction outcome of vote percentage win by Joe Biden across states",fig.height=10.8, fig.width=8.8}
+MainStates <- map_data("state")
+df$color = factor(ifelse(df$mean > 0.5, "win","lose"))
+MergedStates <- inner_join(MainStates, df, by = "region")
+g6 <- ggplot() + geom_polygon( data=MergedStates, 
+          aes(x=long, y=lat, group=group, fill = color), 
+          color="white", size = 0.2)  +
+  scale_fill_manual(values = c("red", "blue")) + theme_bw() +
+  labs(fill = "outcome", title = "Average situation")
+
+df$color2 = factor(ifelse(df$low > 0.5, "win","lose"))
+MergedStates <- inner_join(MainStates, df, by = "region")
+g7 <- ggplot() + geom_polygon( data=MergedStates, 
+          aes(x=long, y=lat, group=group, fill = color2), 
+          color="white", size = 0.2)  +
+  scale_fill_manual(values = c("red", "blue")) + theme_bw() +
+  labs(fill = "outcome",title = "Worst situation with 95% lower prediction")
+
+df$color3 = factor(ifelse(df$upper > 0.5, "win","lose"))
+MergedStates <- inner_join(MainStates, df, by = "region")
+g8 <- ggplot() + geom_polygon( data=MergedStates, 
+          aes(x=long, y=lat, group=group, fill = color3), 
+          color="white", size = 0.2)  +
+  scale_fill_manual(values = c("red", "blue")) + theme_bw() +
+  labs(fill = "outcome",title = "Best situation with 95% upper prediction")
+
+plot_grid(g6, g7, g8, nrow = 3)
+```
+
+
+# Discussion
+
+
+## Votes with confidence intervals
+
+This study not only give estimates and forecasts for vote percentage of Biden across states and in whole US, this study also give confidence intervals correspondingly. Cconfidence intervals of forecastings are important due to they show how we are confident about our forecasting results. 
+
+As the table 3 shows that Joe Biden predicted to win with 52.5% vote +/- 5.2% confidence by the multilevel logistic regression with post-stratification in US. Actually, the 95% confidence interval of the overall outcome for  Joe Biden in US includes 50% which is in the range (47.3%, 57.7%). This is a wide interval indicating the all possible outcomes that Joe Biden lose or win the US 2020 election. It indicates the competition would be very close in fact between Biden and Trump. Considering the new event COVID-19 started in the end of 2019, the unforecasting issues become more and more which could affect the final outcome of US 2020 election, and make the outcome hard to be predicted. 
+
+
+## Votes by states
+
+For states, table 3 shows the results in details combined with the Figure \@ref(fig:map) which shows the average, worst and best situations for Biden. It is already know states in US have consistently voting behaviors, lots of former studies such as @levendusky2011red discussed the 
+red states and blue states, Donald Trump who won the 2016 election represented the Republican party while the vice-president of Barack Obama represented the Democratic party. The red states are the states carried by Republicans while the blue states are the states carried by Democrats. In history, voters in red states and blue states are deeply polarized, they have consistent vote behaviors. Red states like Alaska voted George H. W. Bush, George W. Bush, John McCain and Donald Trump in history for Republican candidates while blue states like District of Columbia voted Bill Clinton, Barack Obama, John Kerry and Hillary Clinton for Democratic candidates. The vote behaviors are almost not changed. 
+
+Focused on the average situation using the mean forecasts by states in Figure \@ref(fig:map), it can be seen Joe Biden mainly won supports from states in the west coast and north-eastern coastal states while Trump mainly won supports in the middle states. For the worst and best situations, Joe Biden would be lost or win for sure as the map would be either red or blue overall. But the two situations are almost not possible to happen. 
+
+
+## Votes by demographics
+
+For this study, the key variables used are age, sex, race, education, income, hispanic or not. Based on the table 2 and figure 5 results, it could be found that males tend to be more willing to vote for Trump instead of Biden, fixed others, the odds of voting for Biden among males is about 32% lower compared with females. Due to confindence interval does not include 0 indicating it is statiscally significant in affecting the voting result. It could be found that whites tend to be more willing to vote for Trump instead of Biden, fixed others, the odds of voting for Biden among whites is about 90% lower compared with blacks. This might due to Trump policy is nicely for whites but not nicely for blacks. The confindence interval does not include 0 indicating race is statiscally significant in affecting the voting result. 
+
+Compared with young age group 18-35, the older age groups all show negative coefficients indicating that older voters are more likely to vote Trump but young ones are more likely to vote Biden, this result might be related with heath care of old people by Trump. Also, hispanic voters supports Biden more than non-hispanic voters. The higher income group of voters are more likely to vote Trump while poorer ones are more likely to vote Biden. For the education level, the higher the level, the high chance to vote Biden. At last, across states, the estimated coefficients indicate the signs of supports for Biden or Trump, they are consistent with the results from table 3.
+
+
+
+## Weaknesses and next steps
+
+There are some weakness for this study. First based on experiences in past US election such as 2016 US election, the predictions of models or other ways could be inaccurate, Trump won the 2016 
+US election which was not predicted by most forecasts before the outcome. So there are limitations of the models in forecasting vote outcome in 2020 US election or in similar elections.
+
+The survey data has weaknesses that there might be selection bias and non-response bias, especially in the COVID-19 period, survey might be affected by COVID-19 there could be missing values and non-responses. The model also depend on the survey data seriously, the post-stratification needs to be consistent with survey data. Data cleanning procedures used in this study might not be the most appropriate. For examples, age was divided into 4 groups, income level was divided into 2 groups, education level was divided into 3 groups in this study. All of the results could be changed under another cleanning plans which could lead to totally different forecasts on the post-stratification data.
+
+The could be omitted important variables bias in the model results, there might be factors not considered in the study such as employment status, martial status, job types and so on. Also, policies like how to treat COVID-19 could affect the results too, for example, Trump not require a wearing mask policy could be an important factor in the COVID-19  pandemic period in the US 2020 election.
+
+In future studies, more other important variables like employment status, martial status, job types could be considered in the models to give better estimates of voters' voting behaviors. More advanced models could be applied to compare with the model used in this study. It would be expected that the results could be improved in future studies based on all of the work in this study.
+
+
+\newpage
+
+\appendix
+
+# Appendix {-}
+
+
+# Additional details
+
+
+```{r d, fig.cap="Model diagnostics",  fig.height=5.8}
+par(mfrow = c(2,1))
+plot(residuals(model, type = "response")~ fitted.values(model))
+plot(model, c(4))
+par(mfrow = c(1,1))
+```
+
+
+\newpage
+
+
+# References
+
+
